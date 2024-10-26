@@ -3,12 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Adrina: Interactive Learning Mode</title>
+    <title>Adrina: Enhanced Speech Recognition</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
             padding: 50px;
+            background-color: #f0f0f0;
+            color: #333;
         }
         #textbox {
             width: 300px;
@@ -16,50 +18,63 @@
             font-size: 20px;
             margin-top: 20px;
         }
-        #commandInput, #responseInput {
-            width: 300px;
-            height: 30px;
-            font-size: 16px;
+        #indicator {
+            width: 20px;
+            height: 20px;
+            background-color: green;
+            border-radius: 50%;
+            display: inline-block;
+            vertical-align: middle;
             margin-top: 10px;
         }
-        .button {
-            margin-top: 20px;
-            font-size: 16px;
+        #confidence {
+            margin-top: 10px;
+        }
+        .dark-mode {
+            background-color: #333;
+            color: #f0f0f0;
+        }
+        .light-mode {
+            background-color: #f0f0f0;
+            color: #333;
         }
     </style>
 </head>
-<body>
-    <h1>Adrina: Interactive Learning Mode</h1>
+<body class="light-mode">
+    <h1>Adrina: Enhanced Speech Recognition</h1>
     <div id="result"></div>
     <input type="text" id="textbox" placeholder="Recognized text will appear here..." readonly />
     <div id="indicator"></div>
     <div id="confidence">Confidence: N/A</div>
-    <input type="text" id="commandInput" placeholder="Enter new command" />
-    <input type="text" id="responseInput" placeholder="Enter response" />
-    <button class="button" onclick="addNewCommand()">Add Command</button>
+    <button id="toggleTheme">Toggle Theme</button>
+    <div id="emotion">Emotion: N/A</div>
     <script>
-        let commands = {};
+        const resultDiv = document.getElementById('result');
+        const textbox = document.getElementById('textbox');
+        const indicator = document.getElementById('indicator');
+        const confidenceDiv = document.getElementById('confidence');
+        const toggleThemeButton = document.getElementById('toggleTheme');
+        const emotionDiv = document.getElementById('emotion');
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
 
-        function addNewCommand() {
-            const command = document.getElementById('commandInput').value.toLowerCase();
-            const response = document.getElementById('responseInput').value;
-            commands[command] = response;
-            alert('New command added!');
-        }
+        recognition.continuous = true; // Enable continuous mode
+        recognition.interimResults = true; // Get interim results for faster feedback
 
-        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-        recognition.continuous = true;
-        recognition.interimResults = true;
+        toggleThemeButton.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            document.body.classList.toggle('light-mode');
+        });
 
         recognition.onstart = function() {
-            document.getElementById('indicator').style.backgroundColor = 'green';
+            indicator.style.backgroundColor = 'green';
             console.log("Speech recognition started.");
         };
 
         recognition.onend = function() {
-            document.getElementById('indicator').style.backgroundColor = 'red';
+            indicator.style.backgroundColor = 'red';
             console.log("Speech recognition ended. Restarting...");
-            recognition.start();
+            recognition.start(); // Automatically restart recognition when it ends
         };
 
         recognition.onresult = function(event) {
@@ -77,27 +92,48 @@
 
             const transcript = interimTranscript || finalTranscript;
             const correctedTranscript = correctSpellingAndPunctuate(transcript);
-            document.getElementById('textbox').value = correctedTranscript;
-            document.getElementById('confidence').innerText = `Confidence: ${(confidence * 100).toFixed(2)}%`;
-            console.log(correctedTranscript, confidence);
+            textbox.value = correctedTranscript; // Update with the latest transcript
+            confidenceDiv.innerText = `Confidence: ${(confidence * 100).toFixed(2)}%`; // Display confidence level
+            console.log(correctedTranscript, confidence);  // Log to console for further use
 
-            if (commands[correctedTranscript.toLowerCase()]) {
-                alert(commands[correctedTranscript.toLowerCase()]);
-            }
+            // Emotion Detection (Placeholder)
+            detectEmotion(correctedTranscript);
         };
 
         function correctSpellingAndPunctuate(text) {
+            // Simple auto-punctuation and spelling correction logic
             let correctedText = text;
+            
+            // Capitalize first letter
             correctedText = correctedText.charAt(0).toUpperCase() + correctedText.slice(1);
+
+            // Add punctuation at the end if missing
             if (!correctedText.endsWith('.') && !correctedText.endsWith('!') && !correctedText.endsWith('?')) {
                 correctedText += '.';
             }
+
+            // Simple spelling correction (for demo purposes, can be extended)
             correctedText = correctedText.replace(/\brecieve\b/g, 'receive');
             correctedText = correctedText.replace(/\bdefinately\b/g, 'definitely');
             correctedText = correctedText.replace(/\bseperate\b/g, 'separate');
+
             return correctedText;
         }
 
+        function detectEmotion(text) {
+            // Placeholder for emotion detection
+            emotionDiv.innerText = `Emotion: Neutral`;
+        }
+
+        // Mic Reset Every 10 Seconds
+        setInterval(function() {
+            recognition.stop();
+            setTimeout(function() {
+                recognition.start();
+            }, 1000);
+        }, 10000);
+
+        // Start recognition on page load
         recognition.start();
     </script>
 </body>
