@@ -57,6 +57,7 @@
         const emotionDiv = document.getElementById('emotion');
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const recognition = new SpeechRecognition();
+        let pauseTimeout;
 
         recognition.continuous = true; // Enable continuous mode
         recognition.interimResults = true; // Get interim results for faster feedback
@@ -78,6 +79,7 @@
         };
 
         recognition.onresult = function(event) {
+            clearTimeout(pauseTimeout); // Clear the timeout on new input
             let interimTranscript = '';
             let finalTranscript = '';
             let confidence = event.results[event.resultIndex][0].confidence;
@@ -98,6 +100,14 @@
 
             // Emotion Detection (Placeholder)
             detectEmotion(correctedTranscript);
+
+            // Set timeout to reset the mic after 5 seconds of no input
+            pauseTimeout = setTimeout(() => {
+                recognition.stop();
+                setTimeout(() => {
+                    recognition.start();
+                }, 1000);
+            }, 5000);
         };
 
         function correctSpellingAndPunctuate(text) {
@@ -124,14 +134,6 @@
             // Placeholder for emotion detection
             emotionDiv.innerText = `Emotion: Neutral`;
         }
-
-        // Mic Reset Every 10 Seconds
-        setInterval(function() {
-            recognition.stop();
-            setTimeout(function() {
-                recognition.start();
-            }, 1000);
-        }, 10000);
 
         // Start recognition on page load
         recognition.start();
