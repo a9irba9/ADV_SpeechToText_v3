@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adrina: Interactive Learning Mode</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+        }
+        #textbox {
+            width: 300px;
+            height: 50px;
+            font-size: 20px;
+            margin-top: 20px;
+        }
+        #commandInput, #responseInput {
+            width: 300px;
+            height: 30px;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        .button {
+            margin-top: 20px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Adrina: Interactive Learning Mode</h1>
+    <div id="result"></div>
+    <input type="text" id="textbox" placeholder="Recognized text will appear here..." readonly />
+    <div id="indicator"></div>
+    <div id="confidence">Confidence: N/A</div>
+    <input type="text" id="commandInput" placeholder="Enter new command" />
+    <input type="text" id="responseInput" placeholder="Enter response" />
+    <button class="button" onclick="addNewCommand()">Add Command</button>
+    <script>
+        let commands = {};
+
+        function addNewCommand() {
+            const command = document.getElementById('commandInput').value.toLowerCase();
+            const response = document.getElementById('responseInput').value;
+            commands[command] = response;
+            alert('New command added!');
+        }
+
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+
+        recognition.onstart = function() {
+            document.getElementById('indicator').style.backgroundColor = 'green';
+            console.log("Speech recognition started.");
+        };
+
+        recognition.onend = function() {
+            document.getElementById('indicator').style.backgroundColor = 'red';
+            console.log("Speech recognition ended. Restarting...");
+            recognition.start();
+        };
+
+        recognition.onresult = function(event) {
+            let interimTranscript = '';
+            let finalTranscript = '';
+            let confidence = event.results[event.resultIndex][0].confidence;
+
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    finalTranscript += event.results[i][0].transcript;
+                } else {
+                    interimTranscript += event.results[i][0].transcript;
+                }
+            }
+
+            const transcript = interimTranscript || finalTranscript;
+            const correctedTranscript = correctSpellingAndPunctuate(transcript);
+            document.getElementById('textbox').value = correctedTranscript;
+            document.getElementById('confidence').innerText = `Confidence: ${(confidence * 100).toFixed(2)}%`;
+            console.log(correctedTranscript, confidence);
+
+            if (commands[correctedTranscript.toLowerCase()]) {
+                alert(commands[correctedTranscript.toLowerCase()]);
+            }
+        };
+
+        function correctSpellingAndPunctuate(text) {
+            let correctedText = text;
+            correctedText = correctedText.charAt(0).toUpperCase() + correctedText.slice(1);
+            if (!correctedText.endsWith('.') && !correctedText.endsWith('!') && !correctedText.endsWith('?')) {
+                correctedText += '.';
+            }
+            correctedText = correctedText.replace(/\brecieve\b/g, 'receive');
+            correctedText = correctedText.replace(/\bdefinately\b/g, 'definitely');
+            correctedText = correctedText.replace(/\bseperate\b/g, 'separate');
+            return correctedText;
+        }
+
+        recognition.start();
+    </script>
+</body>
+</html>
